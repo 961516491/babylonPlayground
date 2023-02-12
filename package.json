@@ -22,6 +22,7 @@
   "dependencies": {
     "babylonjs": "^5.46.0",
     "cnpm": "^9.0.1",
-    "html-webpack-plugin": "^5.5.0"
+    "html-webpack-plugin": "^5.5.0",
+    "url-loader": "^4.1.1"
   }
 }

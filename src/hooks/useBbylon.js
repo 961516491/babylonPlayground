@@ -6,7 +6,31 @@ export const useBabylon = () => {
     const engine = new BABYLON.Engine(canvas, true);
 
     /** 创建场景 */
-    const scene = new BABYLON.Scene(engine)
+    const scene = new BABYLON.Scene(engine);
+
+    /**
+     * 创建材质
+     * 
+     * CreateBox：创建一个立方体。
+     * 
+     * CreateSphere：创建一个球体。
+     * 
+     * CreateCylinder：创建一个圆柱体。
+     * 
+     * CreateCone：创建一个圆锥体。
+     * 
+     * CreateTorus：创建一个圆环体。
+     * 
+     * CreateGround：创建一个平面。
+     * 
+     * CreatePlane：创建一个平面。
+     * 
+     * CreateDisc：创建一个圆盘。
+     * 
+     * CreateIcoSphere：创建一个 IcoSphere。
+     */
+    const mash = BABYLON.MeshBuilder.CreateSphere("sphere", { size: 1, width: 1, height: 1 }, scene);
+
 
     /**
      * 创建摄像头
@@ -35,9 +59,16 @@ export const useBabylon = () => {
      *    speed：摄像机的移动速度。
      *    checkCollisions：摄像机是否与场景中的其他对象发生碰撞。
      */
-    const camera = new BABYLON.ArcRotateCamera("Camera", Math.PI / 2, Math.PI / 2, 2, new BABYLON.Vector3(0, 0, 0), scene);
+    const camera =  new BABYLON.FollowCamera("FollowCam", new BABYLON.Vector3(0, 5, -10), scene);
 
-    camera.attachControl(canvas, true);
+    camera.lockedTarget = mash
+
+    // 设置摄像机位置和目标
+    camera.radius = 10;
+    camera.heightOffset = 15;
+    camera.rotationOffset = 0;
+    camera.cameraAcceleration = 0.05;
+    camera.maxCameraSpeed = 10;
 
     /**
      * 创建光源
@@ -72,28 +103,22 @@ export const useBabylon = () => {
      */
     const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
 
-    /**
-     * 创建材质
-     * 
-     * CreateBox：创建一个立方体。
-     * 
-     * CreateSphere：创建一个球体。
-     * 
-     * CreateCylinder：创建一个圆柱体。
-     * 
-     * CreateCone：创建一个圆锥体。
-     * 
-     * CreateTorus：创建一个圆环体。
-     * 
-     * CreateGround：创建一个平面。
-     * 
-     * CreatePlane：创建一个平面。
-     * 
-     * CreateDisc：创建一个圆盘。
-     * 
-     * CreateIcoSphere：创建一个 IcoSphere。
-     */
-    const mash = BABYLON.MeshBuilder.CreateBox("Box", { size: 1, width: 1, height: 1 }, scene);
+    /** 地面相关 */
+    const ground = BABYLON.MeshBuilder.CreateGround("ground", { width: 100, height: 100 }, scene);
+
+    const groundMaterial = new BABYLON.StandardMaterial("groundMaterial", scene);
+
+    // 加载图片
+    const groundTexture = new BABYLON.Texture('../../public/ground.gif', scene);
+
+    groundMaterial.diffuseTexture = groundTexture
+
+    ground.material = groundMaterial
+
+    ground.position.y = -0.5 
+
+    // 将摄像机作为场景的活动摄像机
+    scene.activeCamera = camera;
 
     // 渲染场景
     engine.runRenderLoop(function () {
