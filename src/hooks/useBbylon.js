@@ -1,36 +1,22 @@
 import * as BABYLON from 'babylonjs';
+import 'babylonjs-loaders';
+
+import myTexture from '../assets/ground.jpg'
+import earthTexture from '../assets/earth.jpg'
+
+// 在全局作用域中导入 Cannon.js 库
+window.CANNON = require('cannon');
 
 export const useBabylon = () => {
   const createScene = (canvas) => {
-
-    const engine = new BABYLON.Engine(canvas, true);
+    const engine = new BABYLON.Engine(canvas, true, { useWebGPU: true });
 
     /** 创建场景 */
     const scene = new BABYLON.Scene(engine);
+    /** 加载物理引擎 */
+    const physicsPlugin = new BABYLON.CannonJSPlugin();
 
-    /**
-     * 创建材质
-     * 
-     * CreateBox：创建一个立方体。
-     * 
-     * CreateSphere：创建一个球体。
-     * 
-     * CreateCylinder：创建一个圆柱体。
-     * 
-     * CreateCone：创建一个圆锥体。
-     * 
-     * CreateTorus：创建一个圆环体。
-     * 
-     * CreateGround：创建一个平面。
-     * 
-     * CreatePlane：创建一个平面。
-     * 
-     * CreateDisc：创建一个圆盘。
-     * 
-     * CreateIcoSphere：创建一个 IcoSphere。
-     */
-    const mash = BABYLON.MeshBuilder.CreateSphere("sphere", { size: 1, width: 1, height: 1 }, scene);
-
+    scene.enablePhysics(new BABYLON.Vector3(0,-9.81,0), physicsPlugin);
 
     /**
      * 创建摄像头
@@ -59,16 +45,53 @@ export const useBabylon = () => {
      *    speed：摄像机的移动速度。
      *    checkCollisions：摄像机是否与场景中的其他对象发生碰撞。
      */
-    const camera =  new BABYLON.FollowCamera("FollowCam", new BABYLON.Vector3(0, 5, -10), scene);
-
-    camera.lockedTarget = mash
-
+    const camera =  new BABYLON.FollowCamera("FollowCam", new BABYLON.Vector3(0, 10, -10), scene);
     // 设置摄像机位置和目标
-    camera.radius = 10;
-    camera.heightOffset = 15;
+    camera.radius = 20;
+    camera.heightOffset = 10;
     camera.rotationOffset = 0;
-    camera.cameraAcceleration = 0.05;
+    camera.cameraAcceleration = 0.005;
     camera.maxCameraSpeed = 10;
+    camera.angularSensibility = 1000; // 设置相机的旋转灵敏度
+
+    /**
+     * 创建材质
+     * 
+     * CreateBox：创建一个立方体。
+     * 
+     * CreateSphere：创建一个球体。
+     * 
+     * CreateCylinder：创建一个圆柱体。
+     * 
+     * CreateCone：创建一个圆锥体。
+     * 
+     * CreateTorus：创建一个圆环体。
+     * 
+     * CreateGround：创建一个平面。
+     * 
+     * CreatePlane：创建一个平面。
+     * 
+     * CreateDisc：创建一个圆盘。
+     * 
+     * CreateIcoSphere：创建一个 IcoSphere。
+     */
+    const sphere = BABYLON.MeshBuilder.CreateSphere("sphere", { diameter: 1 }, scene);
+
+    const ballPhysicsImpostor = new BABYLON.PhysicsImpostor(sphere, BABYLON.PhysicsImpostor.SphereImpostor, { mass: 1, friction: 0.5, restitution: 0.9 }, scene)
+
+    sphere.physicsImpostor = ballPhysicsImpostor
+    
+    const sphereMaterial = new BABYLON.StandardMaterial("sphereMaterial", scene);
+
+    sphereMaterial.diffuseTexture = new BABYLON.Texture(earthTexture, scene);
+
+    sphere.material = sphereMaterial
+
+    sphere.position.y = 1
+
+    camera.lockedTarget = sphere
+
+    scene.activeCamera = camera
 
     /**
      * 创建光源
@@ -106,19 +129,61 @@ export const useBabylon = () => {
     /** 地面相关 */
     const ground = BABYLON.MeshBuilder.CreateGround("ground", { width: 100, height: 100 }, scene);
 
-    const groundMaterial = new BABYLON.StandardMaterial("groundMaterial", scene);
+    /** 将地面设置为静态物体， 否则地面会不停下坠 */
+    ground.physicsImpostor = new BABYLON.PhysicsImpostor(ground, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 0, restitution: 0.7 }, scene);
 
     // 加载图片
-    const groundTexture = new BABYLON.Texture('../../public/ground.gif', scene);
+    const groundMaterial = new BABYLON.StandardMaterial("groundMaterial", scene);
 
-    groundMaterial.diffuseTexture = groundTexture
+    groundMaterial.diffuseTexture = new BABYLON.Texture(myTexture, scene);
 
     ground.material = groundMaterial
 
     ground.position.y = -0.5 
 
-    // 将摄像机作为场景的活动摄像机
-    scene.activeCamera = camera;
+    // // 将摄像机作为场景的活动摄像机
+    // scene.activeCamera = camera;
+
+    // 获取按键事件
+    var inputMap = {};
+    scene.actionManager = new BABYLON.ActionManager(scene);
+
+    scene.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnKeyDownTrigger, (evt) => {
+      inputMap[evt.sourceEvent.key] = evt.sourceEvent.type == "keydown";
+    }));
+  
+    scene.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnKeyUpTrigger, (evt) => {
+      inputMap[evt.sourceEvent.key] = evt.sourceEvent.type == "keydown";
+    }));
+
+    
+  // 更新小球状态
+  scene.onBeforeRenderObservable.add(function() {
+    var speed = 0.1;
+    var friction = 0.05;
+
+    // 根据按键状态移动小球
+    if (inputMap["w"]) {
+      sphere.physicsImpostor.applyImpulse(new BABYLON.Vector3(0, 0, -speed), sphere.getAbsolutePosition());
+    }
+    if (inputMap["s"]) {
+      sphere.physicsImpostor.applyImpulse(new BABYLON.Vector3(0, 0, speed), sphere.getAbsolutePosition());
+    }
+    if (inputMap["a"]) {
+      sphere.physicsImpostor.applyImpulse(new BABYLON.Vector3(-speed, 0, 0), sphere.getAbsolutePosition());
+    }
+    if (inputMap["d"]) {
+      sphere.physicsImpostor.applyImpulse(new BABYLON.Vector3(speed, 0, 0), sphere.getAbsolutePosition());
+    }
+
+    // 计算摩擦力
+    var velocity = sphere.physicsImpostor.getLinearVelocity();
+    if (velocity.length() > 0.01) {
+      var frictionForce = velocity.normalize().scale(-friction * 1);
+      debugger
+      sphere.physicsImpostor.applyForce(frictionForce, sphere.getAbsolutePosition());
+    }
+  });
 
     // 渲染场景
     engine.runRenderLoop(function () {

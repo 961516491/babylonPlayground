@@ -24,13 +24,13 @@ module.exports = {
         ]
       },
       {
-        test: /\.(png|jpe?g|gif)$/,
+        test: /\.(png|jpg|gif)$/i,
         use: [
           {
             loader: 'url-loader',
-            // options: {
-            //   limit: 8192
-            // }
+            options: {
+              limit: 8192
+            }
           }
         ]
       }

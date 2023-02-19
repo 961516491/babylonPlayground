@@ -15,14 +15,17 @@
     "@babel/core": "^7.20.12",
     "@babel/preset-env": "^7.20.2",
     "babel-loader": "^9.1.2",
+    "file-loader": "^6.2.0",
+    "url-loader": "^4.1.1",
     "webpack": "^5.75.0",
     "webpack-cli": "^5.0.1",
     "webpack-dev-server": "^4.11.1"
   },
   "dependencies": {
     "babylonjs": "^5.46.0",
+    "babylonjs-loaders": "^5.47.0",
+    "cannon": "^0.6.2",
     "cnpm": "^9.0.1",
-    "html-webpack-plugin": "^5.5.0",
-    "url-loader": "^4.1.1"
+    "html-webpack-plugin": "^5.5.0"
   }
 }
